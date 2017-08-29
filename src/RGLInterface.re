@@ -13,11 +13,10 @@ module type t = {
     let getHeight: t => int;
     let init: argv::array string => t;
     let setWindowSize: window::t => width::int => height::int => unit;
-    let initDisplayMode: window::t => double_buffer::bool => unit => unit;
     let getContext: t => contextT;
   };
   module Window: WindowT;
-  module Events : RGLEvents.t;
+  module Events: RGLEvents.t;
 
   /** We're currently mimicking the JS asynchronous event handling allowing the user to register callbacks.
    * Instead of mutating global state in the Events module, we simply force the user to register all events
@@ -30,8 +29,8 @@ module type t = {
     mouseDown::(button::Events.buttonStateT => state::Events.stateT => x::int => y::int => unit)? =>
     mouseUp::(button::Events.buttonStateT => state::Events.stateT => x::int => y::int => unit)? =>
     mouseMove::(x::int => y::int => unit)? =>
-    keyDown::((keycode::Events.keycodeT => repeat::bool => unit))? =>
-    keyUp::((keycode::Events.keycodeT => unit))? =>
+    keyDown::(keycode::Events.keycodeT => repeat::bool => unit)? =>
+    keyUp::(keycode::Events.keycodeT => unit)? =>
     windowResize::(unit => unit)? =>
     displayFunc::(float => unit) =>
     unit =>
@@ -40,13 +39,13 @@ module type t = {
   type shaderT;
   let clearColor: context::contextT => r::float => g::float => b::float => a::float => unit;
   let createProgram: context::contextT => programT;
-  let createShader: context::contextT => shaderType::int => shaderT;
+  let createShader: context::contextT => int => shaderT;
   let attachShader: context::contextT => program::programT => shader::shaderT => unit;
-  let deleteShader: context::contextT => shader::shaderT => unit;
+  let deleteShader: context::contextT => shaderT => unit;
   let shaderSource: context::contextT => shader::shaderT => source::string => unit;
-  let compileShader: context::contextT => shader::shaderT => unit;
-  let linkProgram: context::contextT => program::programT => unit;
-  let useProgram: context::contextT => program::programT => unit;
+  let compileShader: context::contextT => shaderT => unit;
+  let linkProgram: context::contextT => programT => unit;
+  let useProgram: context::contextT => programT => unit;
   type bufferT;
   type attributeT;
   type uniformT;
@@ -54,58 +53,26 @@ module type t = {
   let bindBuffer: context::contextT => target::int => buffer::bufferT => unit;
   type textureT;
   let createTexture: context::contextT => textureT;
-  let activeTexture: context::contextT => target::int => unit;
+  let activeTexture: context::contextT => int => unit;
   let bindTexture: context::contextT => target::int => texture::textureT => unit;
   let texParameteri: context::contextT => target::int => pname::int => param::int => unit;
-  type rawTextureDataT;
-  let toTextureData: array int => rawTextureDataT;
+  /*type rawTextureDataT;
+    let toTextureData: array int => rawTextureDataT;*/
   let enable: context::contextT => int => unit;
   let disable: context::contextT => int => unit;
   let blendFunc: context::contextT => int => int => unit;
-  type frameBufferT;
-  let createFrameBuffer: context::contextT => frameBufferT;
-  let bindFrameBuffer:
-    context::contextT => target::int => frameBuffer::option frameBufferT => unit;
-  let framebufferTexture2d:
+  /*type frameBufferT;
+    let createFrameBuffer: context::contextT => frameBufferT;*/
+  /*let bindFrameBuffer:
+    context::contextT => target::int => frameBuffer::option frameBufferT => unit;*/
+  /*let framebufferTexture2d:
     context::contextT =>
     target::int =>
     attachment::int =>
     texTarget::int =>
     texture::textureT =>
     level::int =>
-    unit;
-  let readPixelsRGBA:
-    context::contextT => x::int => y::int => width::int => height::int => rawTextureDataT;
-  type imageT;
-  let getImageWidth: imageT => int;
-  let getImageHeight: imageT => int;
-  type loadOptionT =
-    | LoadAuto
-    | LoadL
-    | LoadLA
-    | LoadRGB
-    | LoadRGBA;
-  let loadImage:
-    filename::string =>
-    loadOption::loadOptionT? =>
-    callback::(option imageT => unit) =>
-    unit =>
-    unit;
-  let texImage2DWithImage: context::contextT => target::int => level::int => image::imageT => unit;
-  let texImage2D:
-    context::contextT =>
-    target::int =>
-    level::int =>
-    internalFormat::int =>
-    width::int =>
-    height::int =>
-    format::int =>
-    type_::int =>
-    data::rawTextureDataT =>
-    unit;
-  let uniform1i: context::contextT => location::uniformT => int => unit;
-  let uniform1f: context::contextT => location::uniformT => float => unit;
-  let generateMipmap: context::contextT => target::int => unit;
+    unit;*/
   module type Bigarray = {
     type t 'a 'b;
     type float64_elt;
@@ -131,19 +98,60 @@ module type t = {
     let create: kind 'a 'b => int => t 'a 'b;
     let of_array: kind 'a 'b => array 'a => t 'a 'b;
     let dim: t 'a 'b => int;
+    let blit: t 'a 'b => t 'a 'b => unit;
     let get: t 'a 'b => int => 'a;
+    let unsafe_get: t 'a 'b => int => 'a;
     let set: t 'a 'b => int => 'a => unit;
+    let unsafe_set: t 'a 'b => int => 'a => unit;
     let sub: t 'a 'b => offset::int => len::int => t 'a 'b;
   };
   module Bigarray: Bigarray;
+  let readPixels_RGBA:
+    context::contextT =>
+    x::int =>
+    y::int =>
+    width::int =>
+    height::int =>
+    Bigarray.t int Bigarray.int8_unsigned_elt;
+  type imageT;
+  let getImageWidth: imageT => int;
+  let getImageHeight: imageT => int;
+  type loadOptionT =
+    | LoadAuto
+    | LoadL
+    | LoadLA
+    | LoadRGB
+    | LoadRGBA;
+  let loadImage:
+    filename::string =>
+    loadOption::loadOptionT? =>
+    callback::(option imageT => unit) =>
+    unit =>
+    unit;
+  let texImage2DWithImage: context::contextT => target::int => level::int => image::imageT => unit;
+  let uniform1i: context::contextT => location::uniformT => val::int => unit;
+  let uniform1f: context::contextT => location::uniformT => val::float => unit;
+  let uniform2f: context::contextT => location::uniformT => v1::float => v2::float => unit;
+  let uniform3f:
+    context::contextT => location::uniformT => v1::float => v2::float => v3::float => unit;
+  let uniform4f:
+    context::contextT =>
+    location::uniformT =>
+    v1::float =>
+    v2::float =>
+    v3::float =>
+    v4::float =>
+    unit;
+  let texImage2D_RGBA:
+    context::contextT =>
+    target::int =>
+    level::int =>
+    width::int =>
+    height::int =>
+    border::int =>
+    data::Bigarray.t 'a 'b =>
+    unit;
   let bufferData: context::contextT => target::int => data::Bigarray.t 'a 'b => usage::int => unit;
-  /* let bufferData2:
-     context::contextT =>
-     target::int =>
-     data::Bigarray.Array1.t 'a 'b Bigarray.c_layout =>
-     byteSize::int =>
-     usage::int =>
-     unit; */
   let viewport: context::contextT => x::int => y::int => width::int => height::int => unit;
   let clear: context::contextT => mask::int => unit;
   let getUniformLocation: context::contextT => program::programT => name::string => uniformT;
@@ -158,6 +166,7 @@ module type t = {
     stride::int =>
     offset::int =>
     unit;
+  let vertexAttribDivisor: context::contextT => attribute::attributeT => divisor::int => unit;
   module type Mat4T = {
     type t;
     let to_array: t => array float;
@@ -189,11 +198,18 @@ module type t = {
   let getProgramParameter:
     context::contextT => program::programT => paramName::programParamsT => int;
   let getShaderParameter: context::contextT => shader::shaderT => paramName::shaderParamsT => int;
-  let getShaderInfoLog: context::contextT => shader::shaderT => string;
-  let getProgramInfoLog: context::contextT => program::programT => string;
-  let getShaderSource: context::contextT => shader::shaderT => string;
+  let getShaderInfoLog: context::contextT => shaderT => string;
+  let getProgramInfoLog: context::contextT => programT => string;
+  let getShaderSource: context::contextT => shaderT => string;
   let drawArrays: context::contextT => mode::int => first::int => count::int => unit;
   let drawElements:
     context::contextT => mode::int => count::int => type_::int => offset::int => unit;
+  let drawElementsInstanced:
+    context::contextT =>
+    mode::int =>
+    count::int =>
+    type_::int =>
+    indices::int =>
+    primcount::int =>
+    unit;
 };
-
