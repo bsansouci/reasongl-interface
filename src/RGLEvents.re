@@ -1,4 +1,4 @@
-module type t = {
+module T = {
   type buttonStateT =
     | LeftButton
     | MiddleButton
@@ -73,5 +73,9 @@ module type t = {
     | CapsLock
     | Backtick
     | Nothing;
+};
+
+module type t = {
+  include (module type of T);
   let keycodeMap: int => keycodeT;
 };
