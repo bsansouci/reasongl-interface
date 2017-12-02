@@ -25,6 +25,8 @@ module type t = {
   module Window: WindowT;
   module Events: RGLEvents.t;
 
+  let getTimeMs: unit => float;
+
   /*** We're currently mimicking the JS asynchronous event handling allowing the user to register callbacks.
    * Instead of mutating global state in the Events module, we simply force the user to register all events
    * handlers at once, allowing us to use the closure to keep track of the data for us.
