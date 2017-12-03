@@ -5,7 +5,11 @@
 module type t = {
   let target: string;
   type contextT;
-  module type FileT = {type t; let readFile: (~filename: string, ~cb: string => unit) => unit;};
+  module type FileT = {type t;
+    let readFile: (~filename: string, ~cb: string => unit) => unit;
+    let saveUserData: (~key: string, ~value: 'a) => bool;
+    let loadUserData: (~key: string) => option('a);
+  };
   module File: FileT;
   module type WindowT = {
     type t;
@@ -14,7 +18,7 @@ module type t = {
     let getPixelWidth: t => int;
     let getPixelHeight: t => int;
     let getPixelScale: t => float;
-    let init: (~argv: array(string)) => t;
+    let init: (~title: string=?, ~argv: array(string), (t) => unit) => unit;
     let setWindowSize: (~window: t, ~width: int, ~height: int) => unit;
     let getContext: t => contextT;
   };
@@ -26,6 +30,8 @@ module type t = {
   };
   module Audio: AudioT;
   module Events: RGLEvents.t;
+
+  let getTimeMs: unit => float;
 
   /*** We're currently mimicking the JS asynchronous event handling allowing the user to register callbacks.
    * Instead of mutating global state in the Events module, we simply force the user to register all events
